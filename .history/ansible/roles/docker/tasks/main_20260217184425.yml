@@ -11,7 +11,6 @@
       - curl
       - gnupg
       - lsb-release
-      - ubuntu-keyring
     state: present
 
 - name: Agregar clave GPG de Docker
