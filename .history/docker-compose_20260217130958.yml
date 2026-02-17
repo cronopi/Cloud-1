@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:5.7
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: 42user
+      MYSQL_PASSWORD: wppassword
+      MYSQL_ROOT_PASSWORD: rootpassword
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    networks:
+      - wp_net
+
+  wordpress:
+    image: wordpress:php8.1-fpm
+    container_name: wordpress
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: mysql
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: 42user
+      WORDPRESS_DB_PASSWORD: wppassword
+    volumes:
+      - ./data/wordpress:/var/www/html
+    depends_on:
+      - mysql
+    networks:
+      - wp_net
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./data/wordpress:/var/www/html
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - wordpress
+    networks:
+      - wp_net
+
+networks:
+  wp_net:
+    driver: bridge
