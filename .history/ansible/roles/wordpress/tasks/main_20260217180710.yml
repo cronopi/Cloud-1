@@ -1,0 +1,33 @@
+---
+- name: Check if Docker Compose project exists
+  stat:
+    path: "{{ project_root }}/docker-compose.yml"
+  register: compose_file
+  vars:
+    project_root: /home/roberto/core/Cloud-1
+
+- name: Create project directory
+  file:
+    path: "{{ project_root }}"
+    state: directory
+    mode: '0755'
+  vars:
+    project_root: /home/roberto/core/Cloud-1
+
+- name: Start Docker Compose services
+  docker_compose:
+    project_src: "{{ project_root }}"
+    state: present
+  vars:
+    project_root: /home/roberto/core/Cloud-1
+  when: compose_file.stat.exists
+
+- name: Wait for WordPress to be ready
+  uri:
+    url: http://localhost
+    status_code: 200
+  register: result
+  until: result.status == 200
+  retries: 30
+  delay: 5
+  ignore_errors: yes
