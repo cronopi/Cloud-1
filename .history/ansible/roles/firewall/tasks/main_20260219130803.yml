@@ -1,0 +1,17 @@
+- name: Permitir HTTP
+  ufw:
+    rule: allow
+    port: '80'
+    proto: tcp
+
+- name: Permitir HTTPS
+  ufw:
+    rule: allow
+    port: '443'
+    proto: tcp
+
+- name: Negar todo lo demás
+  ufw:
+    state: enabled
+    policy: deny
+    direction: incoming

@@ -1,0 +1,107 @@
+- name: Limpiar fuentes anteriores de Docker
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/apt/sources.list.d/docker.list
+    - /etc/apt/sources.list.d/download_docker_com_linux_debian.list
+    - /etc/apt/sources.list.d/download_docker_com_linux_ubuntu.list
+    - /usr/share/keyrings/docker-archive-keyring.gpg
+  ignore_errors: yes
+
+- name: Actualizar repositorio de paquetes
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  register: apt_result
+  until: apt_result is succeeded
+  retries: 3
+  delay: 10
+
+- name: Instalar dependencias necesarias
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+
+
+- name: Crear directorio para claves GPG
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Detectar versión soportada de Docker
+  set_fact:
+    docker_release: "{{ ansible_distribution_release }}"
+    docker_dist: "{{ 'ubuntu' if ansible_distribution == 'Ubuntu' else 'debian' }}"
+
+- name: Mapear versiones antiguas a soportadas
+  set_fact:
+    docker_release: "jammy"
+  when: ansible_distribution_release in ['focal', 'bionic', 'xenial']
+
+- name: Descargar clave GPG de Docker
+  get_url:
+    url: https://download.docker.com/linux/{{ docker_dist }}/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+
+- name: Agregar repositorio de Docker
+  apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/{{ docker_dist }} {{ docker_release }} stable"
+    state: present
+    update_cache: no
+
+- name: Actualizar caché APT después de agregar repositorio
+  apt:
+    update_cache: yes
+    cache_valid_time: 0
+  register: apt_result
+  until: apt_result is succeeded
+  retries: 1
+  delay: 5
+
+- name: Instalar Docker
+  apt:
+    name: docker.io
+    state: present
+
+- name: Instalar Docker Compose
+  apt:
+    name: docker-compose
+    state: present
+
+- name: Recargar systemd daemon
+  systemd:
+    daemon_reload: yes
+
+- name: Verificar si docker.io está instalado
+  command: which docker
+  register: docker_binary
+  changed_when: false
+  failed_when: false
+
+- name: Iniciar servicio Docker con service module
+  service:
+    name: docker
+    state: started
+    enabled: yes
+  ignore_errors: yes
+  when: docker_binary.rc == 0
+
+- name: Iniciar Docker directamente si systemd falla
+  shell: "sudo service docker start || sudo systemctl start docker || dockerd -d"
+  ignore_errors: yes
+  when: docker_binary.rc == 0
+
+- name: Esperar a que Docker esté listo
+  wait_for:
+    path: /var/run/docker.sock
+    state: present
+    timeout: 30
+  ignore_errors: yes

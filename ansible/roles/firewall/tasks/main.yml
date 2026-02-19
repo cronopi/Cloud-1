@@ -1,0 +1,85 @@
+# Firewall - Configuración de puertos seguros
+# Requisito obligatorio Cloud-1: "Only ports 80 (HTTP), 443 (HTTPS), and 22 (SSH) must be accessible"
+
+- name: Instalar UFW (Uncomplicated Firewall)
+  apt:
+    name: ufw
+    state: present
+
+- name: Resetear UFW a configuración por defecto
+  ufw:
+    state: reset
+  # Limpiar cualquier regla anterior conflictiva
+
+- name: Permitir SSH (puerto 22)
+  ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
+  # Acceso remoto seguro - Requisito obligatorio
+
+- name: Permitir HTTP (puerto 80)
+  ufw:
+    rule: allow
+    port: "80"
+    proto: tcp
+  # Acceso web a WordPress - Requisito obligatorio
+
+- name: Permitir HTTPS (puerto 443)
+  ufw:
+    rule: allow
+    port: "443"
+    proto: tcp
+  # Acceso seguro a WordPress con TLS - Requisito obligatorio
+
+- name: Bloquear acceso a MySQL (puerto 3306)
+  ufw:
+    rule: deny
+    port: "3306"
+    proto: tcp
+  # SEGURIDAD CRÍTICA: MySQL NO debe ser accesible desde internet
+  # Solo desde contenedores internos - Requisito obligatorio
+
+- name: Bloquear acceso a PHP-FPM (puerto 9000)
+  ufw:
+    rule: deny
+    port: "9000"
+    proto: tcp
+  # SEGURIDAD: PHP-FPM NO debe ser accesible desde internet
+  # Solo nginx puede acceder (red interna Docker)
+
+- name: Establecer política por defecto DENY incoming
+  ufw:
+    policy: deny
+    direction: incoming
+  # Política de seguridad: rechazar todo lo que no esté permitido explícitamente
+
+- name: Establecer política por defecto ALLOW outgoing
+  ufw:
+    policy: allow
+    direction: outgoing
+  # Permitir salida (el servidor puede conectarse a otros)
+
+- name: Establecer política por defecto ALLOW routed
+  ufw:
+    policy: allow
+    direction: routed
+  # Permitir tráfico roteado (necesario para Docker)
+
+- name: Habilitar UFW
+  ufw:
+    state: enabled
+  # ACTIVAR el firewall
+  # ATENCIÓN: Esto es crítico después de permitir SSH
+  # De lo contrario, perderás acceso remoto al servidor
+
+- name: Mostrar estado del firewall
+  command: ufw status verbose
+  register: ufw_status
+  changed_when: false
+  # Verificar que el firewall está habilitado y con reglas correctas
+
+- name: Mostrar reglas del firewall
+  debug:
+    msg: "{{ ufw_status.stdout_lines }}"
+  # Mostrar en logs de Ansible para verificación manual
