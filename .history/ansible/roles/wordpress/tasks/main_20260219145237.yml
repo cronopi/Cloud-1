@@ -12,7 +12,7 @@
 
 - name: Verificar que ./data/mysql existe
   stat:
-    path: "{{ playbook_dir }}/../data/mysql"
+    path: "{{ playbook_dir }}/data/mysql"
   register: data_mysql_dir
 
 - name: Advertencia si ./data/mysql no existe
@@ -22,7 +22,7 @@
 
 - name: Verificar que ./data/wordpress existe
   stat:
-    path: "{{ playbook_dir }}/../data/wordpress"
+    path: "{{ playbook_dir }}/data/wordpress"
   register: data_wordpress_dir
 
 - name: Advertencia si ./data/wordpress no existe
@@ -36,12 +36,12 @@
 
 - name: Verificar que docker-compose.yml existe en el proyecto
   stat:
-    path: "{{ playbook_dir }}/../docker-compose.yml"
+    path: "{{ playbook_dir }}/docker-compose.yml"
   register: docker_compose_file
 
 - name: Fallar si docker-compose.yml no existe
   fail:
-    msg: "ERROR: docker-compose.yml no encontrado en {{ playbook_dir }}/../"
+    msg: "ERROR: docker-compose.yml no encontrado en {{ playbook_dir }}/"
   when: not docker_compose_file.stat.exists
   # Usa el docker-compose.yml existente, no crea uno nuevo
 
@@ -51,7 +51,7 @@
 
 - name: Verificar que nginx/default.conf existe
   stat:
-    path: "{{ playbook_dir }}/../nginx/default.conf"
+    path: "{{ playbook_dir }}/nginx/default.conf"
   register: nginx_config
 
 - name: Informar si nginx/default.conf existe
@@ -70,11 +70,10 @@
 
 - name: Levantar contenedores Docker Compose
   shell: |
-    cd {{ playbook_dir }}/..
+    cd {{ playbook_dir }}
     docker-compose up -d
   register: docker_compose_result
   # Genera todos los contenedores (mysql, wordpress, nginx, phpmyadmin)
-  # Se ejecuta en el root del proyecto donde está docker-compose.yml
 
 - name: Mostrar resultado
   debug:
@@ -84,14 +83,70 @@
 # PASO 4: Validar que los contenedores están corriendo
 # ==============================================================================
 
+- name: Esperar a que MySQL esté listo
+  wait_for:
+    host: localhost
+    port: 3306
+    delay: 5
+    timeout: 60
+  ignore_errors: yes
+  # Espera hasta 60 segundos a que MySQL esté listo
+
+- name: Esperar a que WordPress esté listo
+  wait_for:
+    host: localhost
+    port: 9000
+    delay: 5
+    timeout: 60
+  ignore_errors: yes
+
+- name: Esperar a que nginx esté listo
+  wait_for:
+    host: localhost
+    port: 80
+    delay: 5
+    timeout: 60
+  ignore_errors: yes
+
 - name: Verificar estado de contenedores
-  command: docker ps -a
+  shell: docker ps --format "table {{.Names}}\t{{.Status}}"
   register: docker_status
   changed_when: false
-  # Muestra todos los contenedores con su estado
 
 - name: Mostrar estado de contenedores
   debug:
     msg: "{{ docker_status.stdout_lines }}"
   # Verifica que todos los contenedores están corriendo
 
+# ==============================================================================
+# PASO 5: Información de acceso
+# ==============================================================================
+
+- name: Mostrar instrucciones de acceso
+  debug:
+    msg:
+      - "=========================================="
+      - "✅ WordPress desplegado correctamente"
+      - "=========================================="
+      - ""
+      - "📍 Accesos disponibles:"
+      - "   - WordPress: http://localhost (o tu dominio)"
+      - "   - phpMyAdmin: http://localhost:8080"
+      - "   - Usuario MySQL: 42user"
+      - "   - Contraseña MySQL: wppassword"
+      - ""
+      - "📊 Ver logs de contenedor MySQL:"
+      - "   docker logs mysql"
+      - ""
+      - "📊 Ver logs de contenedor WordPress:"
+      - "   docker logs wordpress"
+      - ""
+      - "📊 Ver logs de contenedor nginx:"
+      - "   docker logs nginx"
+      - ""
+      - "🔄 Reiniciar servicios:"
+      - "   docker-compose restart"
+      - ""
+      - "🛑 Detener servicios:"
+      - "   docker-compose down"
+      - "=========================================="

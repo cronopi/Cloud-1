@@ -85,13 +85,45 @@
 # ==============================================================================
 
 - name: Verificar estado de contenedores
-  command: docker ps -a
+  shell: |
+    docker ps --format "table {% raw %}{{.Names}}{% endraw %}\t{% raw %}{{.Status}}{% endraw %}"
   register: docker_status
   changed_when: false
-  # Muestra todos los contenedores con su estado
 
 - name: Mostrar estado de contenedores
   debug:
     msg: "{{ docker_status.stdout_lines }}"
   # Verifica que todos los contenedores están corriendo
 
+# ==============================================================================
+# PASO 5: Información de acceso
+# ==============================================================================
+
+- name: Mostrar instrucciones de acceso
+  debug:
+    msg:
+      - "=========================================="
+      - "✅ WordPress desplegado correctamente"
+      - "=========================================="
+      - ""
+      - "📍 Accesos disponibles:"
+      - "   - WordPress: http://localhost (o tu dominio)"
+      - "   - phpMyAdmin: http://localhost:8080"
+      - "   - Usuario MySQL: 42user"
+      - "   - Contraseña MySQL: wppassword"
+      - ""
+      - "📊 Ver logs de contenedor MySQL:"
+      - "   docker logs mysql"
+      - ""
+      - "📊 Ver logs de contenedor WordPress:"
+      - "   docker logs wordpress"
+      - ""
+      - "📊 Ver logs de contenedor nginx:"
+      - "   docker logs nginx"
+      - ""
+      - "🔄 Reiniciar servicios:"
+      - "   docker-compose restart"
+      - ""
+      - "🛑 Detener servicios:"
+      - "   docker-compose down"
+      - "=========================================="
