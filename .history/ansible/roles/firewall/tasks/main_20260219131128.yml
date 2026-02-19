@@ -5,10 +5,13 @@
   apt:
     name: ufw
     state: present
+  # UFW es el firewall estándar en Ubuntu 20.04
+  # Necesario para gestionar iptables de forma simple
 
 - name: Resetear UFW a configuración por defecto
   ufw:
     state: reset
+  ignore_errors: yes
   # Limpiar cualquier regla anterior conflictiva
 
 - name: Permitir SSH (puerto 22)
@@ -16,7 +19,8 @@
     rule: allow
     port: "22"
     proto: tcp
-  # Acceso remoto seguro - Requisito obligatorio
+  # CRÍTICO: Sin esto perderás acceso SSH al servidor remoto
+  # Esta regla va ANTES de habilitar UFW
 
 - name: Permitir HTTP (puerto 80)
   ufw:
@@ -48,19 +52,19 @@
   # SEGURIDAD: PHP-FPM NO debe ser accesible desde internet
   # Solo nginx puede acceder (red interna Docker)
 
-- name: Establecer política por defecto DENY incoming
+- name: Establecer política por defecto: DENY incoming
   ufw:
     policy: deny
     direction: incoming
   # Política de seguridad: rechazar todo lo que no esté permitido explícitamente
 
-- name: Establecer política por defecto ALLOW outgoing
+- name: Establecer política por defecto: ALLOW outgoing
   ufw:
     policy: allow
     direction: outgoing
   # Permitir salida (el servidor puede conectarse a otros)
 
-- name: Establecer política por defecto ALLOW routed
+- name: Establecer política por defecto: ALLOW routed
   ufw:
     policy: allow
     direction: routed

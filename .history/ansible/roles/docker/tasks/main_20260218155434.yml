@@ -7,22 +7,27 @@
     - /etc/apt/sources.list.d/download_docker_com_linux_debian.list
     - /etc/apt/sources.list.d/download_docker_com_linux_ubuntu.list
     - /usr/share/keyrings/docker-archive-keyring.gpg
+  ignore_errors: yes
 
 - name: Actualizar repositorio de paquetes
   apt:
     update_cache: yes
     cache_valid_time: 3600
+  register: apt_result
+  until: apt_result is succeeded
+  retries: 3
+  delay: 10
 
 - name: Instalar dependencias necesarias
   apt:
     name:
-      - apt-transport-https      # Necesario para descargar clave GPG vía HTTPS
-      - ca-certificates          # Validar certificados SSL/TLS
-      - curl                      # Para descargas seguras
-      - gnupg                     # Para verificar integridad de claves GPG
-      - lsb-release              # Para detectar versión del SO
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
     state: present
-  # NOTA: Si ya están instaladas, esta tarea no hace nada
+
 
 - name: Crear directorio para claves GPG
   file:
@@ -65,12 +70,39 @@
   apt:
     name: docker.io
     state: present
-  # NOTA: Si ya está instalado, Ansible no hace nada
-
 
 - name: Instalar Docker Compose
   apt:
     name: docker-compose
     state: present
-  # NOTA: Si ya está instalado, Ansible no hace nada
 
+- name: Recargar systemd daemon
+  systemd:
+    daemon_reload: yes
+  ignore_errors: yes
+
+- name: Verificar si docker.io está instalado
+  command: which docker
+  register: docker_binary
+  changed_when: false
+  failed_when: false
+
+- name: Iniciar servicio Docker con service module
+  service:
+    name: docker
+    state: started
+    enabled: yes
+  ignore_errors: yes
+  when: docker_binary.rc == 0
+
+- name: Iniciar Docker directamente si systemd falla
+  shell: "sudo service docker start || sudo systemctl start docker || dockerd -d"
+  ignore_errors: yes
+  when: docker_binary.rc == 0
+
+- name: Esperar a que Docker esté listo
+  wait_for:
+    path: /var/run/docker.sock
+    state: present
+    timeout: 30
+  ignore_errors: yes

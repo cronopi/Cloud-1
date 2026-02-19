@@ -8,6 +8,7 @@
     - /etc/apt/sources.list.d/download_docker_com_linux_ubuntu.list
     - /usr/share/keyrings/docker-archive-keyring.gpg
 
+
 - name: Actualizar repositorio de paquetes
   apt:
     update_cache: yes
@@ -16,13 +17,13 @@
 - name: Instalar dependencias necesarias
   apt:
     name:
-      - apt-transport-https      # Necesario para descargar clave GPG vía HTTPS
-      - ca-certificates          # Validar certificados SSL/TLS
-      - curl                      # Para descargas seguras
-      - gnupg                     # Para verificar integridad de claves GPG
-      - lsb-release              # Para detectar versión del SO
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
     state: present
-  # NOTA: Si ya están instaladas, esta tarea no hace nada
+
 
 - name: Crear directorio para claves GPG
   file:
@@ -65,12 +66,8 @@
   apt:
     name: docker.io
     state: present
-  # NOTA: Si ya está instalado, Ansible no hace nada
-
 
 - name: Instalar Docker Compose
   apt:
     name: docker-compose
     state: present
-  # NOTA: Si ya está instalado, Ansible no hace nada
-

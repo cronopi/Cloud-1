@@ -1,0 +1,58 @@
+- name: Limpiar fuentes anteriores de Docker
+  shell: |
+    rm -f /etc/apt/sources.list.d/docker.list
+    rm -f /usr/share/keyrings/docker-archive-keyring.gpg
+  ignore_errors: yes
+
+- name: Actualizar repositorio de paquetes
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  register: apt_result
+  until: apt_result is succeeded
+  retries: 3
+  delay: 10
+
+- name: Instalar dependencias necesarias
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+
+
+- name: Crear directorio para claves GPG
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Descargar clave GPG de Docker
+  get_url:
+    url: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+
+- name: Agregar repositorio de Docker
+  apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable"
+    state: present
+
+- name: Instalar Docker
+  apt:
+    name: docker.io
+    state: present
+
+- name: Instalar Docker Compose
+  apt:
+    name: docker-compose
+    state: present
+
+- name: Iniciar servicio Docker
+  systemd:
+    name: docker
+    state: started
+    enabled: yes

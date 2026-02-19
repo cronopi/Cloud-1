@@ -22,7 +22,7 @@
       - gnupg                     # Para verificar integridad de claves GPG
       - lsb-release              # Para detectar versión del SO
     state: present
-  # NOTA: Si ya están instaladas, esta tarea no hace nada
+  # NOTA: Si ya están instaladas, esta tarea es idempotente (no hace nada)
 
 - name: Crear directorio para claves GPG
   file:
@@ -65,12 +65,8 @@
   apt:
     name: docker.io
     state: present
-  # NOTA: Si ya está instalado, Ansible no hace nada
-
 
 - name: Instalar Docker Compose
   apt:
     name: docker-compose
     state: present
-  # NOTA: Si ya está instalado, Ansible no hace nada
-
