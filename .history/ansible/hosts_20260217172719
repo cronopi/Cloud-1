@@ -1,2 +1,0 @@
-[cloud1]
-localhost ansible_connection=local
