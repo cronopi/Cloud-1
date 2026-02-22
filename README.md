@@ -1,4 +1,5 @@
 # Cloud-1
+<<<<<<< HEAD
 
 Infrastructure as Code project using Ansible, Docker, and WordPress.
 Automated deployment of Inception on cloud instances.
@@ -107,3 +108,7 @@ This will:
 1. Install Docker
 2. Configure firewall rules
 3. Deploy WordPress with MySQL database
+=======
+# Cloud-1
+# Cloud-1
+>>>>>>> main

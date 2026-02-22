@@ -1,6 +1,0 @@
-- hosts: cloud1
-  become: yes
-  roles:
-    - docker
-    - firewall
-    - wordpress
