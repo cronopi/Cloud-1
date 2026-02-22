@@ -74,3 +74,10 @@
     state: present
   # NOTA: Si ya está instalado, Ansible no hace nada
 
+
+
+# validar que funciona?
+
+#¿Es necesario el repositorio oficial?
+#Para servidor remoto/producción: SÍ (versiones actualizadas)
+#Para localhost: NO (versión default de apt es suficiente)

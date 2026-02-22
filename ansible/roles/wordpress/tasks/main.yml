@@ -46,7 +46,46 @@
   # Usa el docker-compose.yml existente, no crea uno nuevo
 
 # ==============================================================================
-# PASO 2B: Verificar que configuración nginx existe
+# PASO 3: Verificar que .env existe
+# ==============================================================================
+
+- name: Verificar que .env existe en el proyecto
+  stat:
+    path: "{{ playbook_dir }}/../.env"
+  register: env_file
+
+- name: Fallar si .env no existe
+  fail:
+    msg: |
+      ERROR: archivo .env no encontrado.
+
+      Crear .env con las variables de configuración:
+      1. cp .env.example .env
+      2. Editar .env con tus credenciales
+      3. Volver a ejecutar el playbook
+  when: not env_file.stat.exists
+
+# ==============================================================================
+# PASO 4: Verificar que certificados SSL existen
+# ==============================================================================
+
+- name: Verificar que certificados SSL existen
+  stat:
+    path: "{{ playbook_dir }}/../nginx/ssl/cert.pem"
+  register: ssl_cert
+
+- name: Informar si certificados SSL están listos
+  debug:
+    msg: "✅ Certificados SSL encontrados en ./nginx/ssl/"
+  when: ssl_cert.stat.exists
+
+- name: Advertencia si certificados SSL no existen
+  debug:
+    msg: "⚠️ Certificados SSL no encontrados. Los generó el rol ssl."
+  when: not ssl_cert.stat.exists
+
+# ==============================================================================
+# PASO 5: Verificar que configuración nginx existe
 # ==============================================================================
 
 - name: Verificar que nginx/default.conf existe
@@ -65,7 +104,7 @@
   when: not nginx_config.stat.exists
 
 # ==============================================================================
-# PASO 3: Levantar contenedores con docker-compose
+# PASO 6: Levantar contenedores con docker-compose
 # ==============================================================================
 
 - name: Levantar contenedores Docker Compose
@@ -81,7 +120,7 @@
     msg: "{{ docker_compose_result.stdout_lines }}"
 
 # ==============================================================================
-# PASO 4: Validar que los contenedores están corriendo
+# PASO 7: Validar que los contenedores están corriendo
 # ==============================================================================
 
 - name: Verificar estado de contenedores

@@ -1,2 +1,17 @@
 data/
-./history/
+.history/
+.history
+nginx/ssl/
+nginx/*.pem
+
+# Variables de entorno (contienen credenciales)
+.env
+.env.local
+.env.*.local
+
+# Archivos de sistema y herramientas
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/

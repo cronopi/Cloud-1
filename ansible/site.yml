@@ -3,4 +3,5 @@
   roles:
     - docker
     - firewall
+    - ssl        # Generar certificados SSL antes de wordpress
     - wordpress
