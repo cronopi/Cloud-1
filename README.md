@@ -1,37 +1,3 @@
 # Cloud-1
-
-Infrastructure as Code project using Ansible, Docker, and WordPress.
-
-## Project Structure
-
-- **ansible/** - Ansible playbooks and roles
-  - `hosts` - Inventory file with target hosts
-  - `site.yml` - Main playbook
-  - `roles/` - Ansible roles (docker, firewall, wordpress)
-- **data/** - Persistent data volumes (MySQL and WordPress)
-- **nginx/** - Nginx configuration
-- **docker-compose.yml** - Docker Compose configuration
-
-## Prerequisites
-
-- Ansible installed
-- Docker and Docker Compose installed
-- Sudo access (for the `--ask-become-pass` flag)
-
-## Installation
-
-Run the Ansible playbook with:
-
-```bash
-ansible-playbook -i ansible/hosts ansible/site.yml --ask-become-pass
-```
-
-- name: Limpiar fuentes anteriores de Docker
-  shell: |
-    rm -f /etc/apt/sources.list.d/docker.list
-    rm -f /usr/share/keyrings/docker-archive-keyring.gpg
-
-This will:
-1. Install Docker
-2. Configure firewall rules
-3. Deploy WordPress with MySQL database
+# Cloud-1
+# Cloud-1
