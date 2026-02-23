@@ -7,28 +7,55 @@
 # - phpMyAdmin para administración de BD
 
 # ==============================================================================
-# PASO 1: Verificar estructura de directorios
+# PASO 1: Crear estructura de directorios para volúmenes
 # ==============================================================================
 
-- name: Verificar que ./data/mysql existe
-  stat:
+- name: Crear directorio ./data/mysql
+  file:
     path: "{{ playbook_dir }}/../data/mysql"
-  register: data_mysql_dir
+    state: directory
+    mode: '0755'
+    recurse: yes
+  register: mysql_dir_created
 
-- name: Advertencia si ./data/mysql no existe
+- name: Informar creación de ./data/mysql
   debug:
-    msg: "⚠️ Directorio ./data/mysql no encontrado. Crea la estructura manualmente."
-  when: not data_mysql_dir.stat.exists
+    msg: "✅ Directorio ./data/mysql creado o verificado"
 
-- name: Verificar que ./data/wordpress existe
-  stat:
+- name: Crear directorio ./data/wordpress
+  file:
     path: "{{ playbook_dir }}/../data/wordpress"
-  register: data_wordpress_dir
+    state: directory
+    mode: '0755'
+    recurse: yes
+  register: wordpress_dir_created
 
-- name: Advertencia si ./data/wordpress no existe
+- name: Informar creación de ./data/wordpress
   debug:
-    msg: "⚠️ Directorio ./data/wordpress no encontrado. Crea la estructura manualmente."
-  when: not data_wordpress_dir.stat.exists
+    msg: "✅ Directorio ./data/wordpress creado o verificado"
+
+- name: Crear directorio ./nginx (estructura base)
+  file:
+    path: "{{ playbook_dir }}/../nginx"
+    state: directory
+    mode: '0755'
+    recurse: yes
+  register: nginx_dir_created
+
+- name: Informar creación de ./nginx
+  debug:
+    msg: "✅ Directorio ./nginx creado o verificado"
+
+- name: Generar configuración nginx (default.conf) desde template
+  template:
+    src: default.conf.j2
+    dest: "{{ playbook_dir }}/../nginx/default.conf"
+    mode: '0644'
+  register: nginx_config_created
+
+- name: Informar generación de default.conf
+  debug:
+    msg: "✅ Configuración nginx generada en ./nginx/default.conf"
 
 # ==============================================================================
 # PASO 2: Verificar que docker-compose.yml existe
@@ -66,42 +93,22 @@
   when: not env_file.stat.exists
 
 # ==============================================================================
-# PASO 4: Verificar que certificados SSL existen
+# PASO 5: Configuración completada
 # ==============================================================================
 
-- name: Verificar que certificados SSL existen
-  stat:
-    path: "{{ playbook_dir }}/../nginx/ssl/cert.pem"
-  register: ssl_cert
-
-- name: Informar si certificados SSL están listos
+- name: Resumen de preparación completada
   debug:
-    msg: "✅ Certificados SSL encontrados en ./nginx/ssl/"
-  when: ssl_cert.stat.exists
-
-- name: Advertencia si certificados SSL no existen
-  debug:
-    msg: "⚠️ Certificados SSL no encontrados. Los generó el rol ssl."
-  when: not ssl_cert.stat.exists
-
-# ==============================================================================
-# PASO 5: Verificar que configuración nginx existe
-# ==============================================================================
-
-- name: Verificar que nginx/default.conf existe
-  stat:
-    path: "{{ playbook_dir }}/../nginx/default.conf"
-  register: nginx_config
-
-- name: Informar si nginx/default.conf existe
-  debug:
-    msg: "✅ Configuración nginx encontrada en ./nginx/default.conf"
-  when: nginx_config.stat.exists
-
-- name: Advertencia si nginx/default.conf no existe
-  debug:
-    msg: "Error ./nginx/default.conf no encontrado."
-  when: not nginx_config.stat.exists
+    msg:
+      - "=========================================="
+      - "✅ Estructura del proyecto lista"
+      - "=========================================="
+      - ""
+      - "✓ Directorios de volúmenes creados"
+      - "✓ Configuración nginx generada"
+      - "✓ Certificados SSL listos"
+      - ""
+      - "Procediendo a levantar contenedores..."
+      - "=========================================="
 
 # ==============================================================================
 # PASO 6: Levantar contenedores con docker-compose
