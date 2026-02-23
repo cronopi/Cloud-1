@@ -52,8 +52,3 @@ networks:
     # Red frontend: nginx, WordPress
     # nginx expone puertos 80/443
 
-
-
-
-# NOTA: para la persistencia de datos, se montan volúmenes locales:
-# habría que automatizar la creación de la estructura ./data/mysql y ./data/wordpress
