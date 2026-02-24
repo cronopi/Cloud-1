@@ -12,7 +12,6 @@ services:
     networks:
       - db_net
 
-
   wordpress:
     image: wordpress:php8.1-fpm
     container_name: wordpress
@@ -26,7 +25,6 @@ services:
     networks:
       - db_net      # Acceso a MySQL
       - web_net     # Acceso a nginx
-
 
   nginx:
     image: nginx:alpine
@@ -43,7 +41,6 @@ services:
       - wordpress
     networks:
       - web_net
-
 
   phpmyadmin:
     image: phpmyadmin:latest
