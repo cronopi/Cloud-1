@@ -1,3 +1,29 @@
+# ==============================================================================
+# PASO 0: Verificar si Docker ya está instalado y funcionando
+# ==============================================================================
+
+- name: Verificar si Docker está instalado
+  command: docker --version
+  register: docker_check
+  changed_when: false
+  failed_when: false
+
+- name: Verificar si Docker está funcionando
+  command: docker info
+  register: docker_running
+  changed_when: false
+  failed_when: false
+  when: docker_check.rc == 0
+
+- name: Informar Docker ya instalado
+  debug:
+    msg: "✅ Docker ya está instalado: {{ docker_check.stdout }}"
+  when: docker_check.rc == 0 and docker_running.rc == 0
+
+# ==============================================================================
+# PASO 1: Instalar Docker (solo si no está instalado)
+# ==============================================================================
+
 - name: Limpiar fuentes anteriores de Docker
   file:
     path: "{{ item }}"
@@ -7,11 +33,13 @@
     - /etc/apt/sources.list.d/download_docker_com_linux_debian.list
     - /etc/apt/sources.list.d/download_docker_com_linux_ubuntu.list
     - /usr/share/keyrings/docker-archive-keyring.gpg
+  when: docker_check.rc != 0
 
 - name: Actualizar repositorio de paquetes
   apt:
     update_cache: yes
     cache_valid_time: 3600
+  when: docker_check.rc != 0
 
 - name: Instalar dependencias necesarias
   apt:
@@ -22,6 +50,7 @@
       - gnupg                     # Para verificar integridad de claves GPG
       - lsb-release              # Para detectar versión del SO
     state: present
+  when: docker_check.rc != 0
   # NOTA: Si ya están instaladas, esta tarea no hace nada
 
 - name: Crear directorio para claves GPG
@@ -29,28 +58,32 @@
     path: /etc/apt/keyrings
     state: directory
     mode: '0755'
+  when: docker_check.rc != 0
 
 - name: Detectar versión soportada de Docker
   set_fact:
     docker_release: "{{ ansible_distribution_release }}"
     docker_dist: "{{ 'ubuntu' if ansible_distribution == 'Ubuntu' else 'debian' }}"
+  when: docker_check.rc != 0
 
 - name: Mapear versiones antiguas a soportadas
   set_fact:
     docker_release: "jammy"
-  when: ansible_distribution_release in ['focal', 'bionic', 'xenial']
+  when: docker_check.rc != 0 and ansible_distribution_release in ['focal', 'bionic', 'xenial']
 
 - name: Descargar clave GPG de Docker
   get_url:
     url: https://download.docker.com/linux/{{ docker_dist }}/gpg
     dest: /etc/apt/keyrings/docker.asc
     mode: '0644'
+  when: docker_check.rc != 0
 
 - name: Agregar repositorio de Docker
   apt_repository:
     repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/{{ docker_dist }} {{ docker_release }} stable"
     state: present
     update_cache: no
+  when: docker_check.rc != 0
 
 - name: Actualizar caché APT después de agregar repositorio
   apt:
@@ -60,11 +93,13 @@
   until: apt_result is succeeded
   retries: 1
   delay: 5
+  when: docker_check.rc != 0
 
 - name: Instalar Docker
   apt:
     name: docker.io
     state: present
+  when: docker_check.rc != 0
   # NOTA: Si ya está instalado, Ansible no hace nada
 
 
@@ -72,6 +107,7 @@
   apt:
     name: docker-compose
     state: present
+  when: docker_check.rc != 0
   # NOTA: Si ya está instalado, Ansible no hace nada
 
 
