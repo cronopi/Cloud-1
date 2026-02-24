@@ -46,17 +46,6 @@
   debug:
     msg: "✅ Directorio ./nginx creado o verificado"
 
-- name: Generar configuración nginx (default.conf) desde template
-  template:
-    src: default.conf.j2
-    dest: "{{ playbook_dir }}/../nginx/default.conf"
-    mode: '0644'
-  register: nginx_config_created
-
-- name: Informar generación de default.conf
-  debug:
-    msg: "✅ Configuración nginx generada en ./nginx/default.conf"
-
 # ==============================================================================
 # PASO 2: Verificar que docker-compose.yml existe
 # ==============================================================================
@@ -111,20 +100,34 @@
       - "=========================================="
 
 # ==============================================================================
-# PASO 6: Levantar contenedores con docker-compose
+# PASO 6: Levantar contenedores con docker compose
 # ==============================================================================
 
-- name: Levantar contenedores Docker Compose
+- name: Verificar comando docker compose disponible
+  command: docker compose version
+  register: compose_plugin
+  changed_when: false
+  failed_when: false
+
+- name: Levantar contenedores (docker compose plugin) v actualizada
+  shell: |
+    cd {{ playbook_dir }}/..
+    docker compose up -d
+  register: docker_compose_result
+  when: compose_plugin.rc == 0
+  # Usa el plugin moderno de Docker Compose
+
+- name: Levantar contenedores (docker-compose standalone) v anitigua
   shell: |
     cd {{ playbook_dir }}/..
     docker-compose up -d
   register: docker_compose_result
-  # Genera todos los contenedores (mysql, wordpress, nginx, phpmyadmin)
-  # Se ejecuta en el root del proyecto donde está docker-compose.yml
+  when: compose_plugin.rc != 0
+  # Fallback al comando antiguo de docker-compose o standalone
 
 - name: Mostrar resultado
   debug:
-    msg: "{{ docker_compose_result.stdout_lines }}"
+    msg: "{{ docker_compose_result.stdout_lines | default(['Contenedores iniciados']) }}"
 
 # ==============================================================================
 # PASO 7: Validar que los contenedores están corriendo
