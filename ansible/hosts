@@ -1,2 +1,11 @@
-[cloud1]
+# Inventario de Ansible para Cloud-1
+# Define en qué máquinas se ejecutará el playbook
+
+[cloud1] 
+# Desarrollo local
 localhost ansible_connection=local
+
+# Servidor cloud (descomentar y ajustar cuando tengas la instancia)
+# <IP_SERVIDOR> ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/tu_clave.pem
+
+
