@@ -8,7 +8,7 @@
 
 - name: Crear directorio para certificados SSL
   file:
-    path: "{{ playbook_dir }}/../nginx/ssl"
+    path: "{{ remote_project_dir }}/nginx/ssl"
     state: directory
     mode: '0700'
   # Permisos restrictivos (solo root) por seguridad
@@ -19,14 +19,14 @@
 
 - name: Verificar si certificado ya existe
   stat:
-    path: "{{ playbook_dir }}/../nginx/ssl/cert.pem"
+    path: "{{ remote_project_dir }}/nginx/ssl/cert.pem"
   register: cert_file
 
 - name: Generar certificado autofirmado (válido 365 días)
   shell: |
     openssl req -x509 -newkey rsa:2048 \
-      -keyout {{ playbook_dir }}/../nginx/ssl/key.pem \
-      -out {{ playbook_dir }}/../nginx/ssl/cert.pem \
+      -keyout {{ remote_project_dir }}/nginx/ssl/key.pem \
+      -out {{ remote_project_dir }}/nginx/ssl/cert.pem \
       -days 365 \
       -nodes \
       -subj "/C=ES/ST=Madrid/L=Madrid/O=42/OU=Cloud-1/CN=localhost"
