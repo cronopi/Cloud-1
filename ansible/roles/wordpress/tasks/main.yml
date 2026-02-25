@@ -12,7 +12,7 @@
 
 - name: Crear directorio ./data/mysql
   file:
-    path: "{{ playbook_dir }}/../data/mysql"
+    path: "{{ remote_project_dir }}/data/mysql"
     state: directory
     mode: '0755'
     recurse: yes
@@ -24,7 +24,7 @@
 
 - name: Crear directorio ./data/wordpress
   file:
-    path: "{{ playbook_dir }}/../data/wordpress"
+    path: "{{ remote_project_dir }}/data/wordpress"
     state: directory
     mode: '0755'
     recurse: yes
@@ -36,7 +36,7 @@
 
 - name: Crear directorio ./nginx (estructura base)
   file:
-    path: "{{ playbook_dir }}/../nginx"
+    path: "{{ remote_project_dir }}/nginx"
     state: directory
     mode: '0755'
     recurse: yes
@@ -52,12 +52,12 @@
 
 - name: Verificar que docker-compose.yml existe en el proyecto
   stat:
-    path: "{{ playbook_dir }}/../docker-compose.yml"
+    path: "{{ remote_project_dir }}/docker-compose.yml"
   register: docker_compose_file
 
 - name: Fallar si docker-compose.yml no existe
   fail:
-    msg: "ERROR: docker-compose.yml no encontrado en {{ playbook_dir }}/../"
+    msg: "ERROR: docker-compose.yml no encontrado en {{ remote_project_dir }}/"
   when: not docker_compose_file.stat.exists
   # Usa el docker-compose.yml existente, no crea uno nuevo
 
@@ -67,7 +67,7 @@
 
 - name: Verificar que .env existe en el proyecto
   stat:
-    path: "{{ playbook_dir }}/../.env"
+    path: "{{ remote_project_dir }}/.env"
   register: env_file
 
 - name: Fallar si .env no existe
@@ -111,7 +111,7 @@
 
 - name: Levantar contenedores (docker compose plugin) v actualizada
   shell: |
-    cd {{ playbook_dir }}/..
+    cd {{ remote_project_dir }}
     docker compose up -d
   register: docker_compose_result
   when: compose_plugin.rc == 0
@@ -119,7 +119,7 @@
 
 - name: Levantar contenedores (docker-compose standalone) v anitigua
   shell: |
-    cd {{ playbook_dir }}/..
+    cd {{ remote_project_dir }}
     docker-compose up -d
   register: docker_compose_result
   when: compose_plugin.rc != 0
