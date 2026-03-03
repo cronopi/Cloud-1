@@ -1,79 +1,48 @@
-# SSL/TLS - Generación de certificados para HTTPS
-# Requisito Cloud-1: "Your server should be able, when possible, to use TLS"
-
-
-# ==============================================================================
-# PASO 1: Crear directorio para certificados
-# ==============================================================================
+---
+# SSL/TLS - Generación de certificados autofirmados para HTTPS
 
 - name: Crear directorio para certificados SSL
   file:
     path: "{{ remote_project_dir }}/nginx/ssl"
     state: directory
     mode: '0700'
-  # Permisos restrictivos (solo root) por seguridad
-
-# ==============================================================================
-# PASO 2: Generar certificados autofirmados
-# ==============================================================================
 
 - name: Verificar si certificado ya existe
   stat:
     path: "{{ remote_project_dir }}/nginx/ssl/cert.pem"
   register: cert_file
 
-- name: Generar certificado autofirmado (válido 365 días)
+- name: Generar certificado autofirmado (365 días)
   shell: |
     openssl req -x509 -newkey rsa:2048 \
       -keyout {{ remote_project_dir }}/nginx/ssl/key.pem \
       -out {{ remote_project_dir }}/nginx/ssl/cert.pem \
       -days 365 \
       -nodes \
-      -subj "/C=ES/ST=Madrid/L=Madrid/O=42/OU=Cloud-1/CN=localhost"
+      -subj "/C=ES/ST=Madrid/L=Madrid/O=42/OU=Cloud-1/CN={{ domain | default('localhost') }}"
   when: not cert_file.stat.exists
-  # Solo genera si no existe
-  # -x509: Certificado autofirmado
-  # -newkey rsa:2048: Clave RSA 2048 bits
-  # -days 365: Válido por 1 año
-  # -nodes: Sin contraseña
-  # -subj: Datos del certificado (CN=localhost para desarrollo local)
 
-- name: Mostrar información de certificado
-  debug:
-    msg:
-      - "=========================================="
-      - "✅ Certificado SSL generado"
-      - "=========================================="
-      - ""
-      - "📍 Ubicación:"
-      - "   - Certificado: ./nginx/ssl/cert.pem"
-      - "   - Clave privada: ./nginx/ssl/key.pem"
-      - ""
-      - "⚠️ Nota de seguridad:"
-      - "   Este es un certificado AUTOFIRMADO"
-      - "   Válido para desarrollo y testing"
-      - ""
-      - "📌 Para producción (servidor remoto):"
-      - "   Usar Let's Encrypt con certbot"
-      - "   (Será configurado automáticamente)"
-      - ""
-      - "🔒 HTTP → HTTPS:"
-      - "   Nginx redirige automáticamente"
-      - "=========================================="
-
-# ==============================================================================
-# PASO 3: Verificar que openssl está instalado
-# ==============================================================================
-
-- name: Verificar openssl disponible
+- name: Verificar openssl
   command: which openssl
   register: openssl_check
   changed_when: false
   failed_when: false
 
-- name: Instalar openssl si no existe
+- name: Instalar openssl si es necesario
   apt:
     name: openssl
     state: present
   when: openssl_check.rc != 0
-  # openssl es necesario para generar certificados
+
+- name: Validar que los certificados existen
+  stat:
+    path: "{{ remote_project_dir }}/nginx/ssl/{{ item }}"
+  register: cert_files
+  with_items:
+    - cert.pem
+    - key.pem
+
+- name: Fallar si los certificados no se generaron
+  fail:
+    msg: "ERROR: No se generaron los certificados SSL"
+  when: cert_files.results | selectattr('stat.exists', 'equalto', false) | list | length > 0

@@ -1,7 +1,13 @@
 # Inventario de Ansible para Cloud-1
-# Define en qué máquinas se ejecutará el playbook
+# Servidor remoto: Google Cloud
+# Para ejecutar: ansible-playbook -i ansible/hosts ansible/site.yml
 
 [cloud1]
-34.175.234.207 ansible_user=anab ansible_ssh_private_key_file=~/.ssh/id_ed25519
+34.175.234.207 \
+  ansible_user=anab \
+  ansible_ssh_private_key_file=~/.ssh/id_ed25519 \
+  domain=localhost
+  # ⚠️ IMPORTANTE: Cambiar 'domain=localhost' por tu dominio real si tienes uno
+  # Ejemplo: domain=miapp.tk o domain=miapp.dynamicdns.net
 
 
