@@ -1,7 +1,33 @@
+# ============================================================================
 # Inventario de Ansible para Cloud-1
-# Define en qué máquinas se ejecutará el playbook
+# ============================================================================
+# Define en qué máquinas se ejecutará el playbook de despliegue
+#
+# IMPORTANTE: En Google Cloud, la IP externa es dinámica. Actualiza antes
+# de ejecutar el playbook. Usa: gcloud compute instances describe <nombre> \
+#   --format='get(networkInterfaces[0].accessConfigs[0].natIP)'
+#
+# O usa: ./update_hosts.sh (script para actualizar automáticamente)
+# ============================================================================
 
 [cloud1]
-34.175.234.207 ansible_user=anab ansible_ssh_private_key_file=~/.ssh/id_ed25519
+# VM en Google Cloud - Ubuntu 20.04 LTS
+# IP DINÁMICA: cambia cada vez que apagas/enciendes la instancia
+# Uso: ansible-playbook -i ansible/hosts ansible/site.yml
+cloud-1-server.c.project-b840455f-973b-4b06-abf.internal \
+  ansible_host=34.175.160.217 \
+  ansible_user=root \
+  ansible_port=22 \
+  ansible_ssh_private_key_file=~/.ssh/google_compute_engine \
+  ansible_ssh_common_args="-o StrictHostKeyChecking=no" \
+  remote_project_dir="/root/cloud-1"
+
+# ============================================================================
+# Variables por defecto para todos los hosts del grupo cloud1
+# ============================================================================
+[cloud1:vars]
+ansible_become_user=root
+ansible_python_interpreter=/usr/bin/python3
+deployment_env=production
 
 
