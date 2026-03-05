@@ -9,6 +9,13 @@ nginx/*.pem
 .env.local
 .env.*.local
 
+# Configuración personal de Google Cloud
+cloud.cfg
+
+# Inventario generado automáticamente
+ansible/hosts
+ansible/hosts.backup
+
 # Archivos de sistema y herramientas
 .DS_Store
 *.swp

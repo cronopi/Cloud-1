@@ -1,0 +1,23 @@
+# ============================================================================
+# cloud.cfg - Configuración personal de Google Cloud
+# ============================================================================
+# Copia este archivo como "cloud.cfg" y rellena tus valores:
+#   cp cloud.cfg.example cloud.cfg
+#
+# Este archivo NO se sube al repositorio (está en .gitignore)
+# ============================================================================
+
+# ID del proyecto en Google Cloud
+GCP_PROJECT="tu-project-id"
+
+# Nombre de la instancia/VM
+GCP_INSTANCE="cloud-1-server"
+
+# Zona donde está la VM
+GCP_ZONE="europe-southwest1-b"
+
+# Tu usuario en la VM (el que aparece en los metadatos SSH de GCP)
+SSH_USER="tu-usuario"
+
+# Ruta a tu clave privada SSH
+SSH_KEY="~/.ssh/id_ed25519"
