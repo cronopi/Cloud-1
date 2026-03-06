@@ -1,0 +1,43 @@
+# MySQL - Despliegue del servicio de base de datos
+# Levanta solo el contenedor MySQL de forma independiente
+
+- name: Detectar docker compose disponible
+  command: docker compose version
+  register: compose_plugin
+  changed_when: false
+  failed_when: false
+
+- name: Verificar si MySQL ya está corriendo
+  command: docker ps -q --filter name=^mysql$ --filter status=running
+  register: mysql_running
+  changed_when: false
+
+- name: Levantar contenedor MySQL (compose plugin)
+  shell: |
+    cd {{ remote_project_dir }}
+    docker compose up -d mysql
+  when: mysql_running.stdout == "" and compose_plugin.rc == 0
+
+- name: Levantar contenedor MySQL (compose standalone)
+  shell: |
+    cd {{ remote_project_dir }}
+    docker-compose up -d mysql
+  when: mysql_running.stdout == "" and compose_plugin.rc != 0
+
+- name: Esperar a que MySQL esté listo
+  shell: |
+    cd {{ remote_project_dir }}
+    timeout 60 sh -c 'until docker exec mysql mysqladmin ping -h localhost --silent 2>/dev/null; do sleep 2; done'
+  register: mysql_ready
+  changed_when: false
+  failed_when: false
+  when: mysql_running.stdout == ""
+
+- name: Verificar estado de MySQL
+  command: docker ps --filter name=mysql --format "{{ '{{' }}.Status{{ '}}' }}"
+  register: mysql_status
+  changed_when: false
+
+- name: Mostrar estado de MySQL
+  debug:
+    msg: "MySQL: {{ mysql_status.stdout }}"

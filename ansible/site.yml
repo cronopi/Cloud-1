@@ -3,34 +3,11 @@
   vars:
     remote_project_dir: "/home/{{ ansible_user }}/cloud-1"
 
-  pre_tasks:
-    - name: Crear directorio del proyecto en la VM remota
-      file:
-        path: "{{ remote_project_dir }}/nginx"
-        state: directory
-        mode: '0755'
-        recurse: yes
-
-    - name: Copiar docker-compose.yml a la VM
-      copy:
-        src: "{{ playbook_dir }}/../docker-compose.yml"
-        dest: "{{ remote_project_dir }}/docker-compose.yml"
-        mode: '0644'
-
-    - name: Copiar .env a la VM
-      copy:
-        src: "{{ playbook_dir }}/../.env"
-        dest: "{{ remote_project_dir }}/.env"
-        mode: '0600'
-
-    - name: Copiar configuración de nginx a la VM
-      copy:
-        src: "{{ playbook_dir }}/../nginx/default.conf"
-        dest: "{{ remote_project_dir }}/nginx/default.conf"
-        mode: '0644'
-
   roles:
-    - docker
-    - firewall
-    - ssl        # Generar certificados SSL antes de wordpress
-    - wordpress
+    - common       # Crear directorios y copiar archivos de configuración
+    - docker       # Instalar Docker y Docker Compose
+    - firewall     # Configurar UFW (puertos 22, 80, 443)
+    - ssl          # Generar certificados SSL autofirmados
+    - mysql        # Levantar contenedor MySQL
+    - wordpress    # Levantar contenedores WordPress y phpMyAdmin
+    - nginx        # Levantar contenedor Nginx (proxy inverso)
