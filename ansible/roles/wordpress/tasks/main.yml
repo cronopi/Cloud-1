@@ -1,146 +1,59 @@
-# WordPress - Despliegue completo con Docker Compose
-# Requisitos Cloud-1:
-# - Sitio WordPress con persistencia de datos
-# - Reinicio automático en reboot
-# - TLS/HTTPS
-# - Redirecciones según URL
-# - phpMyAdmin para administración de BD
+# WordPress - Despliegue de WordPress y phpMyAdmin
+# Levanta los contenedores de WordPress (php-fpm) y phpMyAdmin
 
-# ==============================================================================
-# PASO 1: Crear estructura de directorios para volúmenes
-# ==============================================================================
-
-- name: Crear directorio ./data/mysql
-  file:
-    path: "{{ remote_project_dir }}/data/mysql"
-    state: directory
-    mode: '0755'
-    recurse: yes
-  register: mysql_dir_created
-
-- name: Informar creación de ./data/mysql
-  debug:
-    msg: "✅ Directorio ./data/mysql creado o verificado"
-
-- name: Crear directorio ./data/wordpress
-  file:
-    path: "{{ remote_project_dir }}/data/wordpress"
-    state: directory
-    mode: '0755'
-    recurse: yes
-  register: wordpress_dir_created
-
-- name: Informar creación de ./data/wordpress
-  debug:
-    msg: "✅ Directorio ./data/wordpress creado o verificado"
-
-- name: Crear directorio ./nginx (estructura base)
-  file:
-    path: "{{ remote_project_dir }}/nginx"
-    state: directory
-    mode: '0755'
-    recurse: yes
-  register: nginx_dir_created
-
-- name: Informar creación de ./nginx
-  debug:
-    msg: "✅ Directorio ./nginx creado o verificado"
-
-# ==============================================================================
-# PASO 2: Verificar que docker-compose.yml existe
-# ==============================================================================
-
-- name: Verificar que docker-compose.yml existe en el proyecto
-  stat:
-    path: "{{ remote_project_dir }}/docker-compose.yml"
-  register: docker_compose_file
-
-- name: Fallar si docker-compose.yml no existe
-  fail:
-    msg: "ERROR: docker-compose.yml no encontrado en {{ remote_project_dir }}/"
-  when: not docker_compose_file.stat.exists
-  # Usa el docker-compose.yml existente, no crea uno nuevo
-
-# ==============================================================================
-# PASO 3: Verificar que .env existe
-# ==============================================================================
-
-- name: Verificar que .env existe en el proyecto
-  stat:
-    path: "{{ remote_project_dir }}/.env"
-  register: env_file
-
-- name: Fallar si .env no existe
-  fail:
-    msg: |
-      ERROR: archivo .env no encontrado.
-
-      Crear .env con las variables de configuración:
-      1. cp .env.example .env
-      2. Editar .env con tus credenciales
-      3. Volver a ejecutar el playbook
-  when: not env_file.stat.exists
-
-# ==============================================================================
-# PASO 5: Configuración completada
-# ==============================================================================
-
-- name: Resumen de preparación completada
-  debug:
-    msg:
-      - "=========================================="
-      - "✅ Estructura del proyecto lista"
-      - "=========================================="
-      - ""
-      - "✓ Directorios de volúmenes creados"
-      - "✓ Configuración nginx generada"
-      - "✓ Certificados SSL listos"
-      - ""
-      - "Procediendo a levantar contenedores..."
-      - "=========================================="
-
-# ==============================================================================
-# PASO 6: Levantar contenedores con docker compose
-# ==============================================================================
-
-- name: Verificar comando docker compose disponible
+- name: Detectar docker compose disponible
   command: docker compose version
   register: compose_plugin
   changed_when: false
   failed_when: false
 
-- name: Levantar contenedores (docker compose plugin) v actualizada
-  shell: |
-    cd {{ remote_project_dir }}
-    docker compose up -d
-  register: docker_compose_result
-  when: compose_plugin.rc == 0
-  # Usa el plugin moderno de Docker Compose
-
-- name: Levantar contenedores (docker-compose standalone) v anitigua
-  shell: |
-    cd {{ remote_project_dir }}
-    docker-compose up -d
-  register: docker_compose_result
-  when: compose_plugin.rc != 0
-  # Fallback al comando antiguo de docker-compose o standalone
-
-- name: Mostrar resultado
-  debug:
-    msg: "{{ docker_compose_result.stdout_lines | default(['Contenedores iniciados']) }}"
-
-# ==============================================================================
-# PASO 7: Validar que los contenedores están corriendo
-# ==============================================================================
-
-- name: Verificar estado de contenedores
-  command: docker ps -a
-  register: docker_status
+- name: Verificar si WordPress ya está corriendo
+  command: docker ps -q --filter name=^wordpress$ --filter status=running
+  register: wp_running
   changed_when: false
-  # Muestra todos los contenedores con su estado
 
-- name: Mostrar estado de contenedores
+- name: Verificar si phpMyAdmin ya está corriendo
+  command: docker ps -q --filter name=^phpmyadmin$ --filter status=running
+  register: pma_running
+  changed_when: false
+
+- name: Levantar contenedor WordPress (compose plugin)
+  shell: |
+    cd {{ remote_project_dir }}
+    docker compose up -d wordpress
+  when: wp_running.stdout == "" and compose_plugin.rc == 0
+
+- name: Levantar contenedor WordPress (compose standalone)
+  shell: |
+    cd {{ remote_project_dir }}
+    docker-compose up -d wordpress
+  when: wp_running.stdout == "" and compose_plugin.rc != 0
+
+- name: Levantar contenedor phpMyAdmin (compose plugin)
+  shell: |
+    cd {{ remote_project_dir }}
+    docker compose up -d phpmyadmin
+  when: pma_running.stdout == "" and compose_plugin.rc == 0
+
+- name: Levantar contenedor phpMyAdmin (compose standalone)
+  shell: |
+    cd {{ remote_project_dir }}
+    docker-compose up -d phpmyadmin
+  when: pma_running.stdout == "" and compose_plugin.rc != 0
+
+- name: Verificar estado de WordPress
+  command: docker ps --filter name=wordpress --format "{{ '{{' }}.Status{{ '}}' }}"
+  register: wp_status
+  changed_when: false
+
+- name: Verificar estado de phpMyAdmin
+  command: docker ps --filter name=phpmyadmin --format "{{ '{{' }}.Status{{ '}}' }}"
+  register: pma_status
+  changed_when: false
+
+- name: Mostrar estado de servicios WordPress
   debug:
-    msg: "{{ docker_status.stdout_lines }}"
-  # Verifica que todos los contenedores están corriendo
+    msg:
+      - "WordPress: {{ wp_status.stdout }}"
+      - "phpMyAdmin: {{ pma_status.stdout }}"
 

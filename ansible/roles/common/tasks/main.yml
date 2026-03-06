@@ -1,0 +1,38 @@
+# Common - Preparación del entorno en la VM remota
+# Crea directorios y copia archivos de configuración necesarios
+
+- name: Crear directorio del proyecto
+  file:
+    path: "{{ remote_project_dir }}/nginx"
+    state: directory
+    mode: '0755'
+
+- name: Crear directorio de datos MySQL
+  file:
+    path: "{{ remote_project_dir }}/data/mysql"
+    state: directory
+    mode: '0755'
+
+- name: Crear directorio de datos WordPress
+  file:
+    path: "{{ remote_project_dir }}/data/wordpress"
+    state: directory
+    mode: '0755'
+
+- name: Copiar docker-compose.yml a la VM
+  copy:
+    src: "{{ playbook_dir }}/../docker-compose.yml"
+    dest: "{{ remote_project_dir }}/docker-compose.yml"
+    mode: '0644'
+
+- name: Copiar .env a la VM
+  copy:
+    src: "{{ playbook_dir }}/../.env"
+    dest: "{{ remote_project_dir }}/.env"
+    mode: '0600'
+
+- name: Copiar configuración de nginx a la VM
+  copy:
+    src: "{{ playbook_dir }}/../nginx/default.conf"
+    dest: "{{ remote_project_dir }}/nginx/default.conf"
+    mode: '0644'

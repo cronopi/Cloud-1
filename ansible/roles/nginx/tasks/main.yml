@@ -1,0 +1,34 @@
+# Nginx - Proxy inverso y terminación SSL
+# Levanta solo el contenedor Nginx de forma independiente
+
+- name: Detectar docker compose disponible
+  command: docker compose version
+  register: compose_plugin
+  changed_when: false
+  failed_when: false
+
+- name: Verificar si Nginx ya está corriendo
+  command: docker ps -q --filter name=^nginx$ --filter status=running
+  register: nginx_running
+  changed_when: false
+
+- name: Levantar contenedor Nginx (compose plugin)
+  shell: |
+    cd {{ remote_project_dir }}
+    docker compose up -d nginx
+  when: nginx_running.stdout == "" and compose_plugin.rc == 0
+
+- name: Levantar contenedor Nginx (compose standalone)
+  shell: |
+    cd {{ remote_project_dir }}
+    docker-compose up -d nginx
+  when: nginx_running.stdout == "" and compose_plugin.rc != 0
+
+- name: Verificar estado de Nginx
+  command: docker ps --filter name=nginx --format "{{ '{{' }}.Status{{ '}}' }}"
+  register: nginx_status
+  changed_when: false
+
+- name: Mostrar estado de Nginx
+  debug:
+    msg: "Nginx: {{ nginx_status.stdout }}"
