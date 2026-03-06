@@ -20,7 +20,14 @@ ssh:
 	@. ./cloud.cfg && gcloud compute ssh "$${SSH_USER}@$${GCP_INSTANCE}" --project="$${GCP_PROJECT}" --zone="$${GCP_ZONE}"
 
 clean:
-	sudo docker-compose down -v 2>/dev/null || true
+	@echo "🧹 Limpiando entorno local..."
 	rm -f .env
+	@if [ -f cloud.cfg ]; then \
+		echo "🧹 Limpiando VM remota..."; \
+		. ./cloud.cfg && gcloud compute ssh "$${SSH_USER}@$${GCP_INSTANCE}" \
+			--project="$${GCP_PROJECT}" --zone="$${GCP_ZONE}" \
+			--command="cd ~/cloud-1 && sudo docker-compose down -v 2>/dev/null; sudo rm -rf data/ 2>/dev/null; echo '✅ VM limpia'" 2>/dev/null || true; \
+	fi
+	@echo "✅ Limpieza completada"
 
 re: clean all
